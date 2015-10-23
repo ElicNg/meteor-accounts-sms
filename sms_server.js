@@ -78,21 +78,12 @@ Accounts.sms.sendVerificationCode = function (phone, message) {
   message = message || Accounts.sms.message;
   message = message.replace(/{{code}}/g, code);
 
-  // Create user if does not exist
-  var user = Meteor.users.findOne({ phone: phone });
-  if (!user) {
-    Meteor.users.insert({
-      phone: phone,
-      createdAt: new Date()
-    });
-  }
-
   // Clear out existing codes
   codes.remove({phone: phone});
 
   // Generate a new code.
-  codes.insert({phone: phone, code: code});
-  // console.log('sending sms.', phone, code);
+  codes.insert({phone: phone, code: code, sentAt: new Date()});
+
   Accounts.sms.client.sendSMS({
     to: phone,
     body: message
@@ -105,7 +96,7 @@ Accounts.sms.sendVerificationCode = function (phone, message) {
  * @param code
  */
 Accounts.sms.verifyCode = function (phone, code) {
-  var user = Meteor.users.findOne({ phone: phone });
+  var user = Meteor.users.findOne({ 'phone.number': phone });
   if (!user) throw new Meteor.Error('Invalid phone number');
 
   var validCode = codes.findOne({phone: phone, code: code});
