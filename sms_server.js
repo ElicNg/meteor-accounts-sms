@@ -78,11 +78,12 @@ Accounts.sms.sendVerificationCode = function (phone, message) {
   message = message || Accounts.sms.message;
   message = message.replace(/{{code}}/g, code);
 
+  var userId = Meteor.userId();
   // Clear out existing codes
-  codes.remove({phone: phone});
+  codes.remove({userId: userId, phone: phone});
 
   // Generate a new code.
-  codes.insert({phone: phone, code: code, sentAt: new Date()});
+  codes.insert({userId: userId, phone: phone, code: code, sentAt: new Date()});
 
   Accounts.sms.client.sendSMS({
     to: phone,
@@ -96,13 +97,14 @@ Accounts.sms.sendVerificationCode = function (phone, message) {
  * @param code
  */
 Accounts.sms.verifyCode = function (phone, code) {
-  var user = Meteor.users.findOne({ 'phone.number': phone });
+  var userId = Meteor.userId();
+  var user = Meteor.users.findOne({_id: userId, 'phone.number': phone });
   if (!user) throw new Meteor.Error('Invalid phone number');
 
-  var validCode = codes.findOne({phone: phone, code: code});
+  var validCode = codes.findOne({userId: userId, phone: phone, code: code});
   if (!validCode) throw new Meteor.Error('Invalid verification code');
 
   // Clear the verification code after a succesful login.
-  codes.remove({phone: phone});
-  return {userId: user._id};
+  codes.remove({userId: userId, phone: phone});
+  return {userId: userId};
 };
